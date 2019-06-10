@@ -1,0 +1,185 @@
+---
+title: "R Notebook"
+output: html_notebook
+---
+
+## Week 5:Tidy Data
+
+```{r}
+
+library(tidyverse)
+
+table1
+
+table2
+
+table3
+
+table4a
+
+table4b
+
+table5
+
+```
+
+
+
+```{r}
+
+# Computing the rate of the table1 per 10,000
+table1 %>% 
+  mutate(rate = cases / population * 10000)
+
+# Compute cases per year
+table1 %>% 
+  count(year, wt = cases)
+
+# Visualising changes over time
+library(ggplot2)
+ggplot(table1, aes(year, cases)) + 
+  geom_line(aes(group = country), colour = "grey50") + 
+  geom_point(aes(colour = country))
+
+```
+
+
+```{r}
+
+# Gathering columns into a new pair of variables
+table4a %>% 
+  gather(`1999`, `2000`, key = "year", value = "cases")
+
+
+table4b %>% 
+  gather(`1999`, `2000`, key = "year", value = "population")
+
+
+```
+
+
+
+```{r}
+
+# Tidying spread data
+table2 %>%
+    spread(key = type, value = count)
+
+```
+
+```{r}
+
+# Separating or splitting variables into 2 columns
+table3 %>% 
+  separate(rate, into = c("cases", "population"), sep = "/")
+
+```
+
+```{r}
+
+# Separating or splitting variables into 2 columns
+table3 %>% 
+  separate(rate, into = c("cases", "population"))
+
+#Separating out year into century and year by digits
+table3 %>% 
+  separate(year, into = c("century", "year"), sep = 2)
+
+```
+
+
+```{r}
+
+table5
+
+# Uniting century and year
+table5 %>% 
+  unite(actual_year, century, year, sep = "")
+
+```
+
+## Missing Values
+
+```{r}
+stocks <- tibble(
+  year   = c(2015, 2015, 2015, 2015, 2016, 2016, 2016),
+  qtr    = c(   1,    2,    3,    4,    2,    3,    4),
+  return = c(1.88, 0.59, 0.35,   NA, 0.92, 0.17, 2.66))
+
+# Making implicit missing values explicit y organizing years in columns
+stocks %>% 
+  spread(year, return)
+
+# Making explicit missing values implicit
+stocks %>% 
+  spread(year, return) %>% 
+  gather(year, return, `2015`:`2016`, na.rm = TRUE)
+
+# Repeating values when missing value indicates the values should be carried forward
+treatment <- tribble(
+  ~ person,           ~ treatment, ~response,
+  "Derrick Whitmore", 1,           7,
+  NA,                 2,           10,
+  NA,                 3,           9,
+  "Katherine Burke",  1,           4
+)
+
+treatment %>% 
+  fill(person)
+
+```
+
+## Case Study
+
+```{r}
+#Taking a look at the dataset
+who
+
+```
+
+```{r}
+#Organizing the data to remove explivit missing values, and gathering on the basis of 'new' columns
+who1 <- who %>% 
+  gather(new_sp_m014:newrel_f65, key = "key", value = "cases", na.rm = TRUE)
+
+who1
+
+#Showing structure of the key column
+who1 %>% 
+  count(key)
+
+```
+
+
+```{r}
+
+#Fixing format of column names
+who2 <- who1 %>% 
+  mutate(key = stringr::str_replace(key, "newrel", "new_rel"))
+who2
+
+```
+
+
+```{r}
+#Splitting codes at underscore
+who3 <- who2 %>% 
+  separate(key, c("new", "type", "sexage"), sep = "_")
+who3
+
+#Dropping 'new' column because its constant, and 'iso2' and 'iso3' columns as they are redundant 
+who3 %>% 
+  count(new)
+
+who4 <- who3 %>% 
+  select(-new, -iso2, -iso3)
+
+```
+
+```{r}
+#Separating 'sexage' into 'sex' and 'age'
+who5 <- who4 %>% 
+  separate(sexage, c("sex", "age"), sep = 1)
+who5
+
+```

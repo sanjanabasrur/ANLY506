@@ -1,0 +1,91 @@
+---
+title: "R Notebook"
+output: html_notebook
+---
+
+## Exploratory Data Analysis
+
+```{r}
+# Setting working directory
+setwd("C:/Users/Sanjana/Documents/GitHub/ANLY506/CodePortfolio/")
+
+# Returning current working directory
+getwd()
+
+library(readr)
+library(dplyr)
+
+# Importing data by reading csv file
+ozone <- read_csv("US EPA data 2017.csv")
+
+# Retrieving column names of the data
+names(ozone)
+
+#Re-writing names to remove spaces
+names(ozone) <- make.names(names(ozone))
+
+names(ozone)
+```
+
+
+## Checking the data package
+
+```{r}
+
+nrow(ozone)
+
+ncol(ozone)
+
+#Checking the data structure
+str(ozone)
+
+#Checking the top and bottom 10 values of the data
+head(ozone, n=10)
+
+tail(ozone, n=10) # this helps identify if there is a problem with dataat the bottom of the dataset
+
+# Checking number of unique states
+select(ozone, State.Name) %>% unique %>% nrow
+```
+
+Since we know there are only 50 US states, we take a look at the data entries
+
+```{r}
+
+unique(ozone$State.Name)
+
+```
+
+We can see from the list of unique entries that the extra states here are Washington D.C., Puerto Rico, Virgin Islands and Country of Mexico
+
+## Data Analysis
+
+```{r}
+
+# Retrieving data table based on filters
+filter(ozone, Observation.Percent == "97") %>% 
+         select(State.Name, City.Name, Local.Site.Name, Observation.Count)
+
+#Taking a look at the data
+summary(ozone$Observation.Percent)
+```
+
+ We can see that there is a wide range in the observation percentages recorded, but the median remains high at 97 percent 
+
+We want to know which counties have the highest observation percent
+
+```{r}
+ranking <- group_by(ozone, State.Name, County.Name) %>%
+         summarize(ozone = mean(Observation.Percent)) %>%
+         as.data.frame %>%
+         arrange(desc(ozone))
+
+head(ranking,10)
+
+# We look at the 10 lowest counties too
+tail(ranking,10)
+
+#Next we focus on the county with the highest observation percentage
+filter(ozone, State.Name == "Arkansas" & County.Name == "Jackson") %>% nrow
+```
+

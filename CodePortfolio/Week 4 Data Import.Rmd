@@ -1,0 +1,157 @@
+---
+title: "Week 4 practice"
+author: "Sanjana"
+date: "June 6, 2019"
+output: html_document
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
+
+## Week 4: Data Import
+
+
+```{r, warning = FALSE, message=FALSE}
+
+library(tidyverse)
+
+
+read_csv("# Skipping this line
+  x,y,z
+  1,2,3", comment = "#")
+
+```
+
+## Defining column names
+
+
+```{r, warning = FALSE, message=FALSE}
+
+read_csv("a,b,c\n4,5,6", col_names = c("Col 1", "Col 2", "Col 3"))
+
+# Defining na values 
+read_csv("a,b,c\n4,5,.", na = ".")
+
+```
+
+
+## Parsing characters, dates and numbers
+
+
+```{r, warning = FALSE, message=FALSE}
+
+str(parse_character(c("abc","pol","true")))
+
+str(parse_date(c("2019-10-05", "2019-05-10")))
+
+parse_number("Extracting the amount $4,500.76 paid for the hall")
+
+```
+
+## Parsing factors
+
+
+```{r, warning = FALSE, message=FALSE}
+
+vegetables = c("spinach","carrot")
+parse_factor(c("spinach", "banana", "carrot"), levels = vegetables)
+
+```
+
+## Parsing dates and date-times
+
+
+```{r, warning = FALSE, message=FALSE}
+
+parse_datetime("2010-10-01T2010")
+
+library(hms)
+parse_time(c("01:10 am","20:10:01"))
+
+```
+
+## Parsing dates and date-times
+
+
+```{r, warning = FALSE, message=FALSE}
+
+parse_datetime("2010-10-01T2010")
+
+library(hms)
+parse_time(c("01:10 am","20:10:01"))
+
+parse_date("19/06/6", "%y/%m/%d")
+```
+
+## Guessing parse formats
+
+
+```{r, warning = FALSE, message=FALSE}
+
+guess_parser(c("12",352,"561"))
+
+guess_parser(c("12","352","561"))
+
+guess_parser(c(12,352,561))
+
+```
+
+## Trying parse for larger data
+
+
+```{r, warning = FALSE, message=FALSE}
+
+#Specifying column formats to make file easier to read
+
+challenge <- read_csv(
+  readr_example("challenge.csv"), 
+  col_types = cols(
+    x = col_double(),
+    y = col_date()
+  )
+)
+tail(challenge)
+
+```
+
+## Using other strategies to parse data
+
+
+```{r, warning = FALSE, message=FALSE}
+
+# Using tribble function
+
+df <- tribble(
+  ~x,  ~y,
+  "1", "1.77",
+  "2", "2.66",
+  "3", "4.99"
+)
+df
+
+type_convert(df)
+
+```
+
+## Writing to a file
+
+
+```{r, warning = FALSE, message=FALSE}
+
+write_csv(challenge, "challenge.csv")
+challenge
+
+```
+
+## Implementing a binary format which can be shared across programming languages
+
+
+```{r, warning = FALSE, message=FALSE}
+
+library(feather)
+write_feather(challenge, "challenge.feather")
+read_feather("challenge.feather")
+
+```
+

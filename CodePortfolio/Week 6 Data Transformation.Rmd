@@ -1,0 +1,143 @@
+---
+title: "Data Transformation"
+author: "Sanjana"
+date: "June 9, 2019"
+output: html_document
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
+
+## Data Transformation
+
+
+
+```{r cars}
+library(nycflights13)
+library(tidyverse)
+
+# NYC flights data
+nycflights13::flights
+
+#Filtering rows with flights on Jan 31st
+jan31 <- filter(flights, month == 1, day == 31)
+
+#These filters below produce the same result
+nov_dec <- filter(flights, month %in% c(11, 12))
+
+nov_dec2 <- filter(flights, month == 11 | month == 12)
+
+# Filtering for flights that were delayed over an hour
+filter(flights, (arr_delay > 60 | dep_delay > 60))
+```
+
+## Arranging rows
+
+```{r}
+# This sorts rows by year, then month, then days
+arrange(flights, year, month, day)
+
+# This sorts in ascending by arrival time
+arrange(flights, asc(arr_time))
+```
+
+## Selecting columns
+
+```{r}
+# Selecting columns by name
+select(flights, year, month, day)
+
+# Selecting  columns except those from year to day (inclusive)
+select(flights, -(year:day))
+
+# Renaming variables
+rename(flights, tail_num = tailnum)
+```
+
+## Mutate
+
+```{r}
+# Adding 'gain' and 'speed' variables to the dataset
+flights_sml <- select(flights, 
+  year:day, 
+  ends_with("delay"), 
+  distance, 
+  air_time
+)
+mutate(flights_sml,
+  gain = dep_delay - arr_delay,
+  speed = distance / air_time * 60
+)
+```
+
+## Summarise
+
+```{r}
+#Summarizing the flights by arrival delay
+by_day <- group_by(flights, year, month, day)
+summarise(by_day, delay = mean(arr_delay, na.rm = TRUE))
+
+```
+
+## Counts
+
+```{r}
+# Graphical representation of counts
+
+not_cancelled <- flights %>% 
+  filter(!is.na(dep_delay), !is.na(arr_delay))
+
+not_cancelled %>% 
+  group_by(year, month, day) %>% 
+  summarise(mean = mean(dep_delay))
+
+delays <- not_cancelled %>% 
+  group_by(tailnum) %>% 
+  summarise(
+    delay = mean(arr_delay, na.rm = TRUE),
+    n = n()
+  )
+
+delays %>% 
+  filter(n > 25) %>% 
+  ggplot(mapping = aes(x = n, y = delay)) + 
+    geom_point(alpha = 1/10)
+```
+
+## Summary functions
+
+```{r}
+# Mean
+not_cancelled %>% 
+  group_by(year, month, day) %>% 
+  summarise(
+    avg_delay1 = mean(arr_delay), #summarising by average delay
+    avg_delay2 = mean(arr_delay[arr_delay > 0]) # summarising by average positive delay
+  )
+
+#SD
+not_cancelled %>% 
+  group_by(dest) %>% 
+  summarise(distance_sd = sd(distance)) %>% # distance to some destinations which are more variable
+  arrange(desc(distance_sd))
+
+# First and last
+not_cancelled %>% 
+  group_by(year, month, day) %>% 
+  summarise(
+    first_dep = first(dep_time),   
+    last_dep = last(dep_time)        #finding first and last departure for the day
+  )
+```
+
+## Grouping by multiple variables
+
+```{r}
+daily <- group_by(flights, year, month, day)
+(per_day   <- summarise(daily, flights = n()))
+(per_month <- summarise(per_day, flights = sum(flights)))
+(per_year  <- summarise(per_month, flights = sum(flights)))
+
+```
+
