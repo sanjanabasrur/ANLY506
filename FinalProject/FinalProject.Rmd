@@ -1,0 +1,192 @@
+---
+title: "FinalProject"
+author: "Sanjana Basrur"
+date: "June 15, 2019"
+output: html_document
+---
+# Final Project - EDA Analysis
+
+The dataset we are working with is titled 'Gapminder'. This contains information on life expectancy, population and income levels across various years. I will examine the columns in more detail below.
+
+```{r echo=FALSE, results='hide',message=FALSE, warning=FALSE}
+
+library(readr)
+library(tidyverse)
+library(ggplot2)
+library(cluster)
+library(dplyr)
+library(zoo)
+library(factoextra)
+
+```
+
+## Questions 
+
+We are performing the eDA analysis to answer the following questions:
+
+1. What are the trends in life expectancy over the years
+2. Is there a relationship between life expectancy and income
+
+## Describing the data
+
+```{r echo=FALSE, results='hide',message=FALSE, include=FALSE, warning=FALSE}
+
+Gapminder <- read.csv("C:/Users/Sanjana/Desktop/R/ANLY506/gapminder.csv", na.strings=c("","NA"))
+
+summary(Gapminder)
+str(Gapminder)
+
+Gapminder$population <- as.integer(Gapminder$population)
+
+# Examining the data
+head(Gapminder,10)
+tail(Gapminder,10)
+
+```
+
+We see that the has 6 variables with 41284 observations. The variables are Country, Year, Life expectancy, Population, Income and Region. Country is a factor wih 197 levels (197 countries in our dataset), population and region are also factors, Year and income are integers, Life expectancy is a numeric value. The years recorded are 1800 to 2015, and the range of income is 182,526
+
+## Data wrangling and pre-processing
+
+```{r echo=FALSE, results='hide',message=FALSE, include=FALSE, warning=FALSE}
+# Changing population to integer
+Gapminder$population <- as.integer(Gapminder$population)
+
+# Replacing missing values in Population
+Gapminder$population <- na.locf(Gapminder$population)
+head(Gapminder,10)
+
+# Examining the data
+head(Gapminder,10)
+tail(Gapminder,10)
+
+#Examining distribution of data
+ggplot(data = Gapminder, mapping = aes(x = "", y = life)) + 
+  geom_boxplot() +
+  labs(title="Boxplot: Distribution of Life Expectancy",y="Life Expectancy",x="")  +
+  theme(plot.title = element_text(hjust = 0.5))
+
+ggplot(data = Gapminder) +
+  geom_histogram(mapping = aes(x = population), binwidth = 1000, color="blue")+
+  labs(title="Boxplot: Distribution of Income",y="Count",x="Income")  +
+  theme(plot.title = element_text(hjust = 0.5))
+
+ggplot(data = Gapminder) +
+  geom_histogram(mapping = aes(x = income), binwidth = 10000, color="blue")+
+  labs(title="Boxplot: Distribution of Population",y="Count",x="Population")  +
+  theme(plot.title = element_text(hjust = 0.5)) 
+
+# Adjusting the income data for positive skew by taking log scale
+plot(density(log(Gapminder$income), na.rm = TRUE))
+
+Gapminder$income1 <- log(Gapminder$income)
+
+```
+
+We need to make a few adjustments in the data. First, we see that population is being read as a factor rather than integer, and therefore change the data type to integer.
+
+Next, we see that since the census is carried out every 10 years, in some cases there are missing values in Population for the the remaining 9 years until the next census is held. We  assume the population is constant over the decade for these missing values. 
+
+While examining the distribution of the Life expectancy, Income and population, we see that the Income data is postiively skewed due to large income values in some countries. This could be due to various factors; foreign exchange rates resulting in lower income values for countries with lower value currencies, the passage of time leading to inflation etc. This can be adjusted by applying log scale to the income variable.
+
+##Exploring Data
+
+```{r echo=FALSE, results='hide',message=FALSE}
+
+# Average life expectancy thorugh the years
+time_series <- Gapminder %>% 
+  group_by(Year) %>% 
+  summarise(
+    LifeExp = weighted.mean(life, population, na.rm = TRUE),
+    Pop = mean(population, na.rm = TRUE)
+  )
+
+ggplot(time_series, aes(Year, LifeExp)) + geom_line(color = "#00AFBB", size = 2) +
+  xlab("Year") + ylab("Life expectancy") + 
+  ggtitle("Graph 1: Life Expectancy trends through the years") +
+  theme(plot.title = element_text(hjust = 0.5))
+
+time_series %>%
+  arrange(LifeExp)
+
+#Examining the data for 1918
+Gapminder %>%
+  filter(Year==1918) %>%
+  arrange(life)
+
+# Countries with highest Life Expectancy
+Gapminder %>%
+  filter(Year==2015) %>%
+  arrange(desc(life))
+
+```
+
+To answer our first question, the trends in life expectancy across the years, we plot a time series of the average life expectancy, weighted for population. 'Graph 1' reproduces the results. We can see that the life expectancy remains relatively stable through the 19th century, with a slight increase. There is a huge drop in the early 20th century. Further examination reveals that this year is 1918, and the life expectancy fell to 23 years. This is the year of the influenza pandemic that spread through Europe, killing an estimated 50 to 100 million people.
+
+However further examination of the data shows that the life expectancy is as low as 8 years in the countries with the 10 lowest life expectancy rates that year, including as low as 1 year life expectancy in French Polynesia and Samoa. This is a bit suspect, and throws some doubt on the accuracy of the data. 
+
+Around 1950, there is a huge increase int he life expectancy. This can be attributed to the absence of wars and famine, and advances in modern medicine.
+
+```{r echo=FALSE, results='hide',message=FALSE}
+
+# Exploring the relationship between life expectancy and income
+ggplot(data = Gapminder, mapping = aes(x=income1, y=life)) + 
+  geom_point(na.rm = TRUE) +
+  geom_smooth(na.rm = TRUE, se = FALSE)+
+  xlab("Income") + ylab("Life expectancy") + 
+  ggtitle("Graph 2: Life Expectancy at various levels of Income") +
+  theme(plot.title = element_text(hjust = 0.5))
+
+
+# Exploring the rleationship between life expectancy and population
+ggplot(data = Gapminder, mapping = aes(x=population, y=life)) + 
+  geom_point(na.rm = TRUE)+
+  xlab("Population") + ylab("Life expectancy") + 
+  ggtitle("Graph 3: Life Expectancy at various levels of Population") +
+  theme(plot.title = element_text(hjust = 0.5))
+
+```
+
+Next, we look to answer our second question; is there a relationship between income and life expectancy. Graph 2 shows this result. We see from Graph 2, which plots the log scale of income against life expectancy, that there is indeed a positive relationship between the 2 variables. This indicates that higher income levels result in higher life expectancy, which is intuitive. Higher income means more access to medical aid and innovation, and better quality of life.
+
+Graph 3 shows that there is no clear relationship between population and life expectancy.
+
+# Cluster Analysis
+
+```{r echo=FALSE, results='hide',message=FALSE}
+
+Gapminder_2015 <- Gapminder %>%
+  filter(Year==2015)
+Gapminder_2015
+plot(income~life, Gapminder_2015)
+
+#Removing categorical variables
+Gapminder_cluster <- Gapminder_2015[3:5]
+Gapminder_cluster
+
+scaled_data = scale(Gapminder_cluster)
+head(scaled_data)
+
+# Using Elbow method to determine optimal number of clusters in life expectancy data
+set.seed(123)
+
+fviz_nbclust(scaled_data, kmeans, method = "wss")
+
+# Using Silhouette method to determine optimal number of clusters in life expectancy data
+fviz_nbclust(scaled_data, kmeans, method = "silhouette")
+
+#Visualizing with the optimal number of clusters
+k2 <- kmeans(scaled_data, centers = 4, nstart = 25)
+str(k2)
+
+fviz_cluster(k2, data = scaled_data)
+
+```
+
+For our cluster analysis, we focus on the year latest year of data available: 2015. We try out both the Elbow method and Silhouette method for determining the optimal clusters, and eventually settle on the Silhouette methos. The optimal clusters under this method are 4.
+
+The Cluster Plot above visualizes the scatter plot. While cluster 1 seems to produce the values that may not support the general positive relationship between income and life expectancy that we witnessed earlier, clusters 2, 3 and 4 do support this positive relationship.
+
+To conclude, we have taken a look at the trends in life expectancy over 2 centuries; while relatively constant in the 19th century, there was a huge dip in the early 20th century, likely due to influenza and the world wars; the post world war world saw a hige increase in life expectancy due to better living conditions, i.e. absence of war and famije, medical innovation.
+
+Additionally, there seems to be a positive relationship between income levels and life expectancy. This is supported by both out exploratory plots, and largely supported by our cluster analysis for the year 2015.
